@@ -1,4 +1,4 @@
-﻿
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -446,23 +446,28 @@ void alarmMode() {
 
     while (1) {
         GetLocalTime(&t);
-        checkDeadlineAlert();   // 마감 남은 시간도 계속 체크
+        checkDeadlineAlert();
 
         int today = (t.wDayOfWeek == 0 ? 7 : t.wDayOfWeek);
 
         ScheduleNode* s = head;
         while (s != NULL) {
-            if (s->day == today && s->hour == t.wHour && s->minute == t.wMinute) {
+
+            int targetTotalMin = s->hour * 60 + s->minute;
+            int nowTotalMin = t.wHour * 60 + t.wMinute;
+            int diff = targetTotalMin - nowTotalMin;
+
+            if (s->day == today && diff <= 10 && diff >= 1) {
+
                 system("cls");
 
-                printf("┌────────────────────────┐\n");
-                printf("│        일정 알림!      │\n");
-                printf("└────────────────────────┘\n\n");
+                printf("┌───────────────────────────┐\n");
+                printf("│  일정 %d분 전 알림!       │\n", diff);
+                printf("└───────────────────────────┘\n\n");
 
                 printf("[%s요일 %02d:%02d] %s\n\n",
                     dayName[s->day - 1], s->hour, s->minute, s->text);
 
-                // 마감 시간이 설정되어 있으면, 남은 시간도 표시
                 if (hasDeadline) {
                     FILETIME f1, f2;
                     SystemTimeToFileTime(&deadlineTime, &f1);
@@ -473,24 +478,26 @@ void alarmMode() {
                     long long diffSec = (long long)(tt1 - tt2) / 10000000;
 
                     if (diffSec > 0) {
-                        int h = (int)(diffSec / 3600);
-                        int m = (int)((diffSec % 3600) / 60);
-                        printf("마감까지 남은 시간: %d시간 %d분\n\n", h, m);
-                    }
-                    else {
-                        printf("※ 마감 시간이 이미 지났습니다.\n\n");
+                        int days = diffSec / 86400;
+                        int hours = (diffSec % 86400) / 3600;
+                        int minutes = (diffSec % 3600) / 60;
+                        printf("예정된 일정일 진행하셔야 합니다\n\n");
+                        //printf(" 마감까지 남은 시간: %d일 %d시간 %d분\n\n",days, hours, minutes);
                     }
                 }
 
-                printf("Enter를 누르면 메뉴로 돌아갑니다...");
+                printf("엔터를 누르면 메뉴로 돌아갑니다...");
                 getchar(); getchar();
                 return;
             }
+
             s = s->next;
         }
-        Sleep(1000); // 1초 대기
+
+        Sleep(1000);   
     }
 }
+
 
 // ======================= 메인 메뉴 =======================
 void mainMenu() {
